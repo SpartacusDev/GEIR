@@ -1,0 +1,11 @@
+# Useless
+__pycache__
+
+# Useless
+.idea
+
+# Useless
+.vscode
+
+# Old stuff that are no longer needed
+no_longer_needed

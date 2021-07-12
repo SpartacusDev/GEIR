@@ -88,8 +88,10 @@ class Announcements(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot: commands.Bot = bot
         
-        q = db.query(Device).all()
-        if len(q) == 0:
+        q = db.query(Device)
+        for device in q:
+            break
+        else:
             response = requests.get("https://api.ipsw.me/v2.1/firmwares.json")
             data = response.json()
             devices = data["devices"]

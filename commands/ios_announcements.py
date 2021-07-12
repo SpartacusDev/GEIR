@@ -3,6 +3,7 @@ from discord.ext import commands, tasks, menus
 from discord.utils import get
 from discord import Embed, Webhook, Role, TextChannel, RawReactionActionEvent
 import requests
+from database import db, Device
 
 
 # class Info(menus.Menu):
@@ -86,7 +87,17 @@ class List(menus.Menu):
 class Announcements(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot: commands.Bot = bot
-        self.signed = {}
+        
+        q = db.query(Device).all()
+        if len(q) == 0:
+            response = requests.get("https://api.ipsw.me/v2.1/firmwares.json")
+            data = response.json()
+            devices = data["devices"]
+            for device in devices:
+                device_obj = Device(device_id=device, signed_versions=self._get_signed_versions_for_device(devices[device]))
+                db.add(device_obj)
+            db.commit()
+
         self.new_devices = []
     
     @commands.command(
@@ -154,26 +165,28 @@ class Announcements(commands.Cog):
         response = requests.get("https://api.ipsw.me/v2.1/firmwares.json")
         data = response.json()
         devices = data["devices"]
-        if self.signed == {}:
-            self.signed = self._get_signed_versions(devices)
-            return
-        
+
         for device in devices:
-            try:
-                self.signed[device]
-            except:
+            device_obj = db.query(Device).filter(Device.device_id == device).first()
+            if device_obj is None:
                 self.new_devices.append(device)
+                device_obj = Device(device_id=device, signed_versions=self._get_signed_versions_for_device(devices[device]))
+                db.add(device_obj)
             else:
                 signed_versions = self._get_signed_versions_for_device(devices[device])
-                if not signed_versions == self.signed[device]:
-                    old = self.signed[device]
-                    new = signed_versions
-                    new_versions = [version for version in new if version not in old]
-                    if not new_versions == []:
+                if not signed_versions == device_obj.signed_versions:
+                    new_versions = [version for version in signed_versions if version not in device_obj.signed_versions]
+                    if len(new_versions) > 0:
                         await self._announce_new_versions(device, new_versions)
-                    not_signed_versions = [version for version in old if version not in new]
-                    if not not_signed_versions == []:
-                        await self._announce_unsigned_versions(device, new_versions)
+                    
+                    not_signed_versions = [version for version in device_obj.signed_versions if version not in signed_versions]
+                    if len(not_signed_versions) > 0:
+                        await self._announce_unsigned_versions(device, not_signed_versions)
+                
+                    device_obj.signed_versions = signed_versions
+            
+        db.commit()
+        
         if len(self.new_devices) > 0:
             await self._announce_new_devices()
 
@@ -199,10 +212,10 @@ class Announcements(commands.Cog):
                         await guild.create_role(name=device)
                     except HTTPException:
                         break
-            webhook: Webhook = get(await guild.webhooks(), name="GEIR")
-            if webhook is not None:
-                message = '\n'.join(self.new_devices)
-                await webhook.send(f"New devices has been released:\n{message}")
+                webhook: Webhook = get(await guild.webhooks(), name="GEIR")
+                if webhook is not None:
+                    message = '\n'.join(self.new_devices)
+                    await webhook.send(f"New devices has been released:\n{message}")
         self.new_devices = []
     
     async def _announce_new_versions(self, device: str, versions: list):
@@ -213,11 +226,11 @@ class Announcements(commands.Cog):
                         await guild.create_role(name=device)
                     except HTTPException:
                         break
-            webhook: Webhook = get(await guild.webhooks(), name="GEIR")
-            role: Role = get(guild.roles, name=device)
-            if webhook is not None:
-                message = '\n'.join([version['version'] + ' build ID: ' + version['buildid'] for version in versions])
-                await webhook.send(f"New versions has been released for {role.mention if role is not None else device}:\n{message}")
+                webhook: Webhook = get(await guild.webhooks(), name="GEIR")
+                role: Role = get(guild.roles, name=device)
+                if webhook is not None:
+                    message = '\n'.join([version['version'] + ' build ID: ' + version['buildid'] for version in versions])
+                    await webhook.send(f"New versions has been released for {role.mention if role is not None else device}:\n{message}")
     
     async def _announce_unsigned_versions(self, device: str, versions: list):
         for guild in self.bot.guilds:
@@ -227,11 +240,11 @@ class Announcements(commands.Cog):
                         await guild.create_role(name=device)
                     except HTTPException:
                         break
-            webhook: Webhook = get(await guild.webhooks(), name="GEIR")
-            role: Role = get(guild.roles, name=device)
-            if webhook is not None:
-                message = '\n'.join([version['version'] + ' build ID: ' + version['buildid'] for version in versions])
-                await webhook.send(f"Versions that are now unsigned for {role.mention if role is not None else device}:\n{message}")
+                webhook: Webhook = get(await guild.webhooks(), name="GEIR")
+                role: Role = get(guild.roles, name=device)
+                if webhook is not None:
+                    message = '\n'.join([version['version'] + ' build ID: ' + version['buildid'] for version in versions])
+                    await webhook.send(f"Versions that are now unsigned for {role.mention if role is not None else device}:\n{message}")
     
     @commands.command(name="list", description="Shows a list of the compatible devices")
     async def devices_list(self, ctx: commands.Context):

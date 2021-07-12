@@ -59,13 +59,16 @@ class Tweaks(commands.Cog):
         if query == "":
             await ctx.send("Please provide a valid query.")
             return
-        data = self._search(query)
+        data = self._search(query, True)
         pages = Packages().new(data["data"])
         await pages.start(ctx)
     
     @staticmethod
-    def _search(query):
-        response = requests.get(f"https://spartacusdev.herokuapp.com/api/search/{query}")
+    def _search(query: str, more_results: bool=False):
+        if more_results:
+            response = requests.get(f"https://spartacusdev.herokuapp.com/api/search_harder/{query}")
+        else:
+            response = requests.get(f"https://spartacusdev.herokuapp.com/api/search/{query}")
         data = response.json()
         return data
     

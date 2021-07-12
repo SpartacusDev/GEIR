@@ -9,3 +9,8 @@ __pycache__
 
 # Old stuff that are no longer needed
 no_longer_needed
+
+# Testing
+announcements_test.py
+database_test.py
+ipswme_test.py

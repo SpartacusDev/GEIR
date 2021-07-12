@@ -3,7 +3,7 @@ from discord.ext import commands, tasks, menus
 from discord.utils import get
 from discord import Embed, Webhook, Role, TextChannel, RawReactionActionEvent
 import requests
-from database import db, Device
+from .database import db, Device
 
 
 # class Info(menus.Menu):

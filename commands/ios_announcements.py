@@ -165,7 +165,11 @@ class Announcements(commands.Cog):
     @tasks.loop(minutes=10)
     async def check_for_updates(self):
         response = requests.get("https://api.ipsw.me/v2.1/firmwares.json")
-        data = response.json()
+        try:
+            data = response.json()
+        except Exception as e:
+            print(f"Failed to check to updates. Error message: {e}")
+            return
         devices = data["devices"]
 
         for device in devices:

@@ -165,7 +165,11 @@ class Announcements(commands.Cog):
     @tasks.loop(minutes=10)
     async def check_for_updates(self):
         response = requests.get("https://api.ipsw.me/v2.1/firmwares.json")
-        data = response.json()
+        try:
+            data = response.json()
+        except Exception as e:
+            print(f"Failed to check to updates. Error message: {e}")
+            return
         devices = data["devices"]
 
         for device in devices:
@@ -215,10 +219,14 @@ class Announcements(commands.Cog):
                         await guild.create_role(name=device)
                     except HTTPException:
                         break
-                webhook: Webhook = get(await guild.webhooks(), name="GEIR")
-                if webhook is not None:
-                    message = '\n'.join(self.new_devices)
-                    await webhook.send(f"New devices has been released:\n{message}")
+                try:
+                    webhook: Webhook = get(await guild.webhooks(), name="GEIR")
+                except:
+                    ...
+                else:
+                    if webhook is not None:
+                        message = '\n'.join(self.new_devices)
+                        await webhook.send(f"New devices has been released:\n{message}")
         self.new_devices = []
     
     async def _announce_new_versions(self, device: str, versions: list):
@@ -229,11 +237,15 @@ class Announcements(commands.Cog):
                         await guild.create_role(name=device)
                     except HTTPException:
                         break
-                webhook: Webhook = get(await guild.webhooks(), name="GEIR")
-                role: Role = get(guild.roles, name=device)
-                if webhook is not None:
-                    message = '\n'.join([version['version'] + ' build ID: ' + version['buildid'] for version in versions])
-                    await webhook.send(f"New versions has been released for {role.mention if role is not None else device}:\n{message}")
+                try:
+                    webhook: Webhook = get(await guild.webhooks(), name="GEIR")
+                except:
+                    ...
+                else:
+                    role: Role = get(guild.roles, name=device)
+                    if webhook is not None:
+                        message = '\n'.join([version['version'] + ' build ID: ' + version['buildid'] for version in versions])
+                        await webhook.send(f"New versions has been released for {role.mention if role is not None else device}:\n{message}")
     
     async def _announce_unsigned_versions(self, device: str, versions: list):
         for guild in self.bot.guilds:
@@ -243,11 +255,15 @@ class Announcements(commands.Cog):
                         await guild.create_role(name=device)
                     except HTTPException:
                         break
-                webhook: Webhook = get(await guild.webhooks(), name="GEIR")
-                role: Role = get(guild.roles, name=device)
-                if webhook is not None:
-                    message = '\n'.join([version['version'] + ' build ID: ' + version['buildid'] for version in versions])
-                    await webhook.send(f"Versions that are now unsigned for {role.mention if role is not None else device}:\n{message}")
+                try:
+                    webhook: Webhook = get(await guild.webhooks(), name="GEIR")
+                except:
+                    ...
+                else:
+                    role: Role = get(guild.roles, name=device)
+                    if webhook is not None:
+                        message = '\n'.join([version['version'] + ' build ID: ' + version['buildid'] for version in versions])
+                        await webhook.send(f"Versions that are now unsigned for {role.mention if role is not None else device}:\n{message}")
     
     @commands.command(name="list", description="Shows a list of the compatible devices")
     async def devices_list(self, ctx: commands.Context):

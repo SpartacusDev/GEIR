@@ -186,8 +186,9 @@ class Announcements(commands.Cog):
                         await self._announce_unsigned_versions(device, not_signed_versions)
                 
                     device_obj.signed_versions = signed_versions
+            db.commit()  # So it won't say the same thing over and over again when there's an error
             
-        db.commit()
+        # db.commit()
         
         if len(self.new_devices) > 0:
             await self._announce_new_devices()

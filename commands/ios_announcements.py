@@ -3,7 +3,7 @@ from discord.ext import commands, tasks, menus
 from discord.utils import get
 from discord import Embed, Webhook, Role, TextChannel, RawReactionActionEvent
 import requests
-from .database import db, Device
+from .database import db, Device, Prefix
 
 
 # class Info(menus.Menu):
@@ -214,56 +214,84 @@ class Announcements(commands.Cog):
     async def _announce_new_devices(self):
         for guild in self.bot.guilds:
             if get(guild.members, id=self.bot.user.id).guild_permissions.manage_roles == True:
-                for device in self.new_devices:
-                    try:
-                        await guild.create_role(name=device)
-                    except HTTPException:
-                        break
-                try:
-                    webhook: Webhook = get(await guild.webhooks(), name="GEIR")
-                except:
-                    ...
+                prefix = db.query(Prefix).filter(Prefix.guild_id == f"{guild.id}").first()
+                if prefix is None or prefix.blacklisted is None:
+                    blacklisted = False
                 else:
-                    if webhook is not None:
-                        message = '\n'.join(self.new_devices)
-                        await webhook.send(f"New devices has been released:\n{message}")
+                    blacklisted = prefix.blacklisted
+                if not blacklisted:
+                    for device in self.new_devices:
+                        try:
+                            await guild.create_role(name=device)
+                        except HTTPException:
+                            break
+            try:
+                webhook: Webhook = get(await guild.webhooks(), name="GEIR")
+            except:
+                ...
+            else:
+                if webhook is not None:
+                    message = '\n'.join(self.new_devices)
+                    await webhook.send(f"New devices has been released:\n{message}")
         self.new_devices = []
     
     async def _announce_new_versions(self, device: str, versions: list):
         for guild in self.bot.guilds:
             if get(guild.members, id=self.bot.user.id).guild_permissions.manage_roles == True:
-                for device in self.new_devices:
-                    try:
-                        await guild.create_role(name=device)
-                    except HTTPException:
-                        break
-                try:
-                    webhook: Webhook = get(await guild.webhooks(), name="GEIR")
-                except:
-                    ...
+                prefix = db.query(Prefix).filter(Prefix.guild_id == f"{guild.id}").first()
+                if prefix is None or prefix.blacklisted is None:
+                    blacklisted = False
                 else:
-                    role: Role = get(guild.roles, name=device)
-                    if webhook is not None:
-                        message = '\n'.join([version['version'] + ' build ID: ' + version['buildid'] for version in versions])
-                        await webhook.send(f"New versions has been released for {role.mention if role is not None else device}:\n{message}")
+                    blacklisted = prefix.blacklisted
+                if not blacklisted:
+                    for device in self.new_devices:
+                        try:
+                            await guild.create_role(name=device)
+                        except HTTPException:
+                            break
+            try:
+                webhook: Webhook = get(await guild.webhooks(), name="GEIR")
+            except:
+                ...
+            else:
+                try:
+                    role = get(guild.roles, name=device)
+                    if role is not None:
+                        role = role.mention
+                except:
+                    role = f"@{device}"
+                if webhook is not None:
+                    message = '\n'.join([version['version'] + ' build ID: ' + version['buildid'] for version in versions])
+                    await webhook.send(f"New versions has been released for {role.mention if role is not None else device}:\n{message}")
     
     async def _announce_unsigned_versions(self, device: str, versions: list):
         for guild in self.bot.guilds:
             if get(guild.members, id=self.bot.user.id).guild_permissions.manage_roles == True:
-                for device in self.new_devices:
-                    try:
-                        await guild.create_role(name=device)
-                    except HTTPException:
-                        break
-                try:
-                    webhook: Webhook = get(await guild.webhooks(), name="GEIR")
-                except:
-                    ...
+                prefix = db.query(Prefix).filter(Prefix.guild_id == f"{guild.id}").first()
+                if prefix is None or prefix.blacklisted is None:
+                    blacklisted = False
                 else:
-                    role: Role = get(guild.roles, name=device)
-                    if webhook is not None:
-                        message = '\n'.join([version['version'] + ' build ID: ' + version['buildid'] for version in versions])
-                        await webhook.send(f"Versions that are now unsigned for {role.mention if role is not None else device}:\n{message}")
+                    blacklisted = prefix.blacklisted
+                if not blacklisted:
+                    for device in self.new_devices:
+                        try:
+                            await guild.create_role(name=device)
+                        except HTTPException:
+                            break
+            try:
+                webhook: Webhook = get(await guild.webhooks(), name="GEIR")
+            except:
+                ...
+            else:
+                try:
+                    role = get(guild.roles, name=device)
+                    if role is not None:
+                        role = role.mention
+                except:
+                    role = f"@{device}"
+                if webhook is not None:
+                    message = '\n'.join([version['version'] + ' build ID: ' + version['buildid'] for version in versions])
+                    await webhook.send(f"Versions that are now unsigned for {role if role is not None else device}:\n{message}")
     
     @commands.command(name="list", description="Shows a list of the compatible devices")
     async def devices_list(self, ctx: commands.Context):

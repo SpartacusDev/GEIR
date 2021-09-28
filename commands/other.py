@@ -52,6 +52,26 @@ class Other(commands.Cog):
         else:
             await ctx.send(f"Added you the {device} role!")
     
+    @commands.command(
+        description="Blacklist/whitelist the server so GEIR won't/will create any more roles"
+    )
+    @commands.guild_only()
+    @commands.has_guild_permissions(manage_guild=True)
+    async def blacklist(self, ctx: commands.Context):
+        prefix = db.query(Prefix).filter(Prefix.guild_id == f"{ctx.guild.id}").first()
+        if prefix is None:
+            prefix = Prefix(guild_id = f"{ctx.guild.id}", prefix="*", blacklisted=True)
+            db.add(prefix)
+            db.commit()
+            await ctx.send("I won't be creating any more roles in this server")
+            return
+        if prefix.blacklisted is None:
+            prefix.blacklisted = True
+        else:
+            prefix.blacklisted = not prefix.blacklisted
+        db.commit()
+        await ctx.send(f"I {'won\'t' if prefix.blacklisted else 'will'} be creating any more roles in this server")
+    
     @commands.Cog.listener()
     async def on_guild_join(self, guild: Guild):
         prefix = Prefix(guild_id=f"{guild.id}", prefix="*")

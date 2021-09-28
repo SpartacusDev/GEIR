@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, create_engine
+from sqlalchemy import Column, String, create_engine, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
@@ -14,6 +14,7 @@ class Prefix(Base):
 
     guild_id = Column(String, primary_key=True, nullable=False)
     prefix = Column(String, nullable=False)
+    blacklisted = Column(Boolean, default=False)
 
     def __repr__(self):
         return "<(guild_id={0.guild_id}, prefix={0.prefix})>".format(self)

@@ -262,7 +262,7 @@ class Announcements(commands.Cog):
                     role = f"@{device}"
                 if webhook is not None:
                     message = '\n'.join([version['version'] + ' build ID: ' + version['buildid'] for version in versions])
-                    await webhook.send(f"New versions has been released for {role.mention if role is not None else device}:\n{message}")
+                    await webhook.send(f"New versions has been released for {role if role is not None else device}:\n{message}")
     
     async def _announce_unsigned_versions(self, device: str, versions: list):
         for guild in self.bot.guilds:

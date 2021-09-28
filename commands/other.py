@@ -70,7 +70,8 @@ class Other(commands.Cog):
         else:
             prefix.blacklisted = not prefix.blacklisted
         db.commit()
-        await ctx.send(f"I {'won\'t' if prefix.blacklisted else 'will'} be creating any more roles in this server")
+        message = "won't" if prefix.blacklisted else "will"
+        await ctx.send(f"I {message} be creating any more roles in this server")
     
     @commands.Cog.listener()
     async def on_guild_join(self, guild: Guild):
